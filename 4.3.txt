@@ -1,0 +1,111 @@
+DATAS SEGMENT
+    ;此处输入数据段代码  
+    err db 0dh,0ah,'error$'
+    num db 0dh,0ah,'number is $'
+    eng db 0dh,0ah,'char is $'
+DATAS ENDS
+
+STACKS SEGMENT
+    ;此处输入堆栈段代码
+STACKS ENDS
+
+CODES SEGMENT
+    ASSUME CS:CODES,DS:DATAS,SS:STACKS
+START:
+    MOV AX,DATAS
+    MOV DS,AX
+    ;此处输入代码段代码
+    mov ah,01h
+    int 21h
+    call number
+   	call upper
+   	call lower
+   	call error
+    
+number proc near
+	cmp al,'0'
+	jb	numReturn
+	cmp al,'9'
+	ja  numReturn
+	lea dx,num
+	mov ah,09h
+	int 21h	
+	call print
+	MOV AH,4CH
+    INT 21H
+numReturn:
+	ret	 
+number endp 
+
+upper proc near
+	cmp al,'A'
+	jb	upperReturn
+	cmp al,'Z'
+	ja  upperReturn
+	lea dx,eng
+	mov ah,09h
+	int 21h
+	call print
+	MOV AH,4CH
+    INT 21H
+upperReturn:
+	ret
+upper endp
+
+lower proc near
+	cmp al,'a'
+	jb	lowerReturn
+	cmp al,'z'
+	ja  lowerReturn
+	lea dx,eng
+	mov ah,09h
+	int 21h
+	call print
+	MOV AH,4CH
+    INT 21H
+lowerReturn:
+	ret
+lower endp
+
+print proc near
+	sub bx,bx
+	mov bl,al
+    sub ax,ax  
+    mov ch,4  
+rotate:  
+    mov cl,4  
+    rol bx,cl  
+    mov al,bl  
+    and al,0fH  
+    add al,30H  
+    cmp al,3aH  
+    jl  print16  
+    add al,7H  
+print16:  
+    mov dl,al  
+    mov ah,2  
+    int 21H  
+    dec ch  
+    jnz rotate  
+    mov dl,'H'  
+    mov ah,2  
+    int 21h  
+    mov ah,4ch  
+    int 21h 
+print endp
+
+error proc near
+	lea dx,err
+	mov ah,09h
+	int 21h
+	MOV AH,4CH
+    INT 21H
+	ret
+error endp
+    
+    MOV AH,4CH
+    INT 21H
+CODES ENDS
+    END START
+
+

@@ -1,0 +1,93 @@
+DATAS SEGMENT
+    monthNumber dw '10','20','30','40','50','60','70','80','90','01','11','21'
+    monthArray db 'Jan$','Feb$','Mat$','Apr$','May$','Jun$','Jul$','Aug$','Sep$','Oct$','Nov$','Dec$'
+	number dw 5
+		   dw ?
+		   dw (5) dup(?)
+	index  db ?
+DATAS ENDS
+
+STACKS SEGMENT
+    ;此处输入堆栈段代码
+STACKS ENDS
+
+CODES SEGMENT
+    ASSUME CS:CODES,DS:DATAS,SS:STACKS
+START:
+    MOV AX,DATAS
+    MOV DS,AX
+    ;此处输入代码段代码
+    sub cx,cx
+    
+    call input
+    call loopMonth
+    
+input proc near
+	sub dx,dx
+	lea dx,number
+	mov ah,0ah
+	int 21h
+	mov bx,number+2
+	mov dx,bx
+	ret
+input endp
+
+loopMonth proc near
+	mov cx,12
+	sub si,si
+	
+s:
+	sub ax,ax
+	mov ax,monthNumber[si]
+	cmp bx,ax
+	jz 	print
+	add si,2
+	;dec cx
+	loop s
+	
+Print: 
+	call printMonth
+	
+	ret
+loopMonth endp
+
+printMonth proc near
+	mov bh,2
+	mov ax,si
+	div bh
+	sub bx,bx
+	mov bl,al
+	sub ax,ax
+	mov al,bl
+	mov bx,4
+	mul bx
+	mov bx,ax
+	call newline
+	lea dx,monthArray[bx]
+	mov ah,09h
+	int 21h
+	MOV AH,4CH
+    INT 21H
+	ret
+printMonth endp
+
+newline proc near
+	push ax
+    push dx
+    mov dl, 0dh
+    mov ah,2
+    int    21h
+    mov dl, 0ah
+    mov  ah,2
+    int    21h
+    pop  dx
+    pop  ax
+    ret
+newline endp
+
+    MOV AH,4CH
+    INT 21H
+CODES ENDS
+    END START
+
+
