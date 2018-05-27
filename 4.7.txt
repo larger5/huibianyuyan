@@ -1,0 +1,149 @@
+DATAS SEGMENT
+    ;此处输入数据段代码 
+    mes1  db  'please input the first operand:$'     ;提示请输入第一个数的字符串
+    mes2  db  'please input the second operand:$'   ;提示请输入第二个数的字符串
+    mes3  db  'please input the operator:$'         ;提示请输入操作符的字符串
+    mes4  db  'output the Calculated Results:$'      ;输出计算结果的字符串
+    mes5  db  'output the Calculated Results:-$'      ;输出计算结果的字符串,带负号
+ 	mes6  db  'error! $'
+DATAS ENDS
+
+STACKS SEGMENT
+    ;此处输入堆栈段代码
+STACKS ENDS
+
+CODES SEGMENT
+    ASSUME CS:CODES,DS:DATAS,SS:STACKS
+START:
+    MOV AX,DATAS
+    MOV DS,AX
+    ;此处输入代码段代码
+    lea dx,mes1
+  	call printString 
+  	call inputdec
+  	mov cx,bx ;第一个数存到cx
+  	lea dx,mes2
+  	call printString
+  	call inputdec;第二个数默认存到bx
+  	lea dx,mes3
+  	call printString
+  	mov ah,1  
+	int 21h
+  	cmp al,'+'  ;'+':执行bx+cx
+  	jz addbc
+  	cmp al,'-'	;'-':执行cx-bx
+  	jz subcb
+  	jmp printerror
+  addbc:  ;直接相加,结果给bx
+  	add bx,cx
+  	call crlf
+  	lea dx,mes4
+  	call printString
+  	call outputdec
+  	jmp endall
+  subcb:  ;cx-bx
+  	cmp cx,bx ;如果cx<bx,则跳转
+  	jb subbc
+  	sub cx,bx
+  	mov bx,cx
+  	call crlf
+  	lea dx,mes4
+  	call printString
+  	call outputdec
+  	jmp endall
+  subbc: ;bx-cx
+  	sub bx,cx
+  	call crlf
+  	lea dx,mes5
+  	call printString
+  	call outputdec
+  	jmp endall
+  printerror:
+  	lea dx,mes6
+  	call printString
+  	jmp endall
+  	
+  endall:
+    MOV AH,4CH
+    INT 21H
+    
+printString PROC ;输出提示字符串
+  	PUSH AX
+	MOV AH,09
+	INT 21H
+	POP AX  
+	RET
+printString ENDP     
+  
+inputdec proc  ;读入十进制数到bx
+	push ax
+	push cx
+	mov bx,0 ;存放累加的数值
+  newchar: 
+	mov ah,1  
+	int 21h
+	cmp al,'0'
+	jb endinput
+	cmp al,'9'
+	ja endinput
+	sub al,30h
+	mov ah,0 ;ax存放新读入的数值
+	xchg bx,ax ;交换ax和bx,因为乘以10用的是ax
+	mov cx,10
+	mul cx   ;将ax,即bx中原来的值乘以10
+	add bx,ax ;累加的数值存入bx
+	jmp newchar
+  endinput:
+  	pop cx
+  	pop ax
+  	call crlf
+  	ret
+inputdec endp
+
+outputdec proc  ;从bx输出十进制数
+	push ax
+	push bx
+	push cx
+	push dx
+	mov cx,10000d
+	call dec_div
+	mov cx,1000d
+	call dec_div
+	mov cx,100d
+	call dec_div
+	mov cx,10d
+	call dec_div
+	mov cx,1d
+	call dec_div
+	pop dx
+  	pop cx
+  	pop bx
+  	pop ax
+	ret
+  dec_div proc
+  	mov ax,bx
+  	mov dx,0
+  	div cx
+  	mov bx,dx
+  	mov dl,al
+  	add dl,30h
+  	mov ah,2
+  	int 21h
+  	ret
+  dec_div endp
+outputdec endp
+
+crlf proc  ;输出回车
+	push ax
+	push dx
+	mov ah,02h
+	mov dl,0dh 
+	int 21h
+	mov dl,0ah
+	int 21h
+	pop dx
+	pop ax
+	ret
+crlf endp
+CODES ENDS
+    END START

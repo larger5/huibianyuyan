@@ -1,0 +1,173 @@
+output macro string
+    mov ah,09h
+    lea dx,string
+    int 21h
+endm
+datarea segment
+    grade dw 10 dup(0)
+    str0 db 13,10,"please input 10 numbers:$"
+    str1 db 13,10,"The highest score:$"
+    str2 db 13,10,"the number of failing:$" 
+    str3 db 13,10,"average:$"
+    str4 db 13,10,"Input error!!!",13,10,'$'
+    num   dw 0 	
+datarea ends
+
+CODES SEGMENT
+    ASSUME CS:CODES,DS:DATAREA
+START:
+main proc near
+      push ds
+      sub ax,ax
+      push ax
+      
+      mov ax,datarea
+      mov ds,ax
+      output str0      
+      call input
+      output str1
+      call max
+      mov ax,cx
+      call print
+      output str2
+      call failing
+      call print
+      output str3
+      call average
+      call print
+      MOV AH,4CH
+      INT 21H
+main endp
+
+input proc near
+      mov si,0
+      mov num,0
+      input2:
+            call decibin
+            inc num
+            cmp dl,' '
+            je store
+            cmp dl,13
+            je exit2
+            jne error
+      store:
+            mov grade[si],bx
+            add si,2
+            jmp input2
+      error:
+            output str4
+      exit2:
+            mov grade[si],bx
+ret
+input endp
+
+decibin proc near
+        mov bx,0
+newchar:
+        mov ah,1
+        int 21h
+        mov dl,al
+        sub al,30h
+        jl exit1
+        cmp al,9d
+        jg exit1
+        cbw
+        xchg ax,bx
+        mov cx,10d
+        mul cx
+        xchg ax,bx
+        add bx,ax
+        jmp newchar
+exit1:
+      ret
+decibin endp
+
+max proc near
+    mov bx,offset grade
+    mov cx,0
+    mov dx,0
+    max2:
+        cmp dx,[num]
+        jge s
+        mov ax,[bx]
+        cmp ax,cx
+        jge t
+        jle r
+        
+    r:
+      add bx,2
+      inc dx
+      jmp max2
+    t:
+      mov cx,ax
+      add bx,2
+      inc dx
+      jmp max2  
+    s: 
+      ret
+ret
+max endp
+
+failing proc near
+        mov bx,offset grade
+	    mov cx,3ch
+	    mov dx,0
+	    mov ax,0
+	    failing2:
+		        cmp dx,[num]
+		        jge s
+		        cmp [bx],cx
+		        jl cf
+		        add bx,2
+		        inc dx
+		        jmp failing2
+		cf:
+		  inc ax
+		  add bx,2
+		  inc dx
+		  jmp failing2
+		s:
+		  ret
+		        
+ret
+failing endp
+
+average proc near
+        mov bx,offset grade
+	    mov dx,0
+	    mov cx,[num]
+	    mov ax,0
+	    average2:
+		        cmp dx,[num]
+		        jge s
+		        add ax,[bx]
+		        add bx,2
+		        inc dx
+		        jmp average2
+		s:
+		  mov dx,0
+		  div cx
+		  ret		       
+ret
+average endp
+
+print proc near
+       mov cx, 0 
+       mov bx,10
+    t: 
+       mov dx,0
+       div bx
+       push dX 
+       inc cx
+       or ax,ax
+       jne t
+    r: 
+       mov ah,2
+       pop dx
+       add  dl, 30H 
+       int 21h
+       loop r
+ret
+print endp
+CODES ENDS
+END START

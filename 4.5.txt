@@ -1,0 +1,81 @@
+;题目：
+;①子程序DISPLAY显示MESS字符串
+;②宏指令CLRB用“*”将MESS字符区中的字符全部取代
+;③字符区首地址及其长度为变元
+;④取代后的MESS 在屏幕上显示
+
+CLRB MACRO address1,long1
+    mov ax,address1     ;算出屏幕第12行中间的显存的段起始位置放入ax中
+    mov es,ax               ;此时es为屏幕第12行中间的显存的段起始位置
+    mov si,0                  ;si用来索引代码列的字符
+    mov di,0                  ;di用来定位目标列
+  
+	mov cx,long1 ;字符串长度
+	s2:
+	mov al,42          ;*字符
+	mov es:[di],al    ;显示目标字符体
+	
+	mov al,76h        ;颜色:背景、字体
+	mov es:[di+1],al;设置目标字符颜色
+	
+	inc si                  ;db 一个字符一个字节
+	add di,2          ;显存 一个字符两个字节:偶字符体，奇字符颜色
+	loop s2
+	
+	ENDM
+      
+DATAS SEGMENT
+				;'0123456789abcdef'
+	MESS	db	'linhongcun'      ;要显示的字符串，10
+	address dw	0b872h			;显存字符串首地址
+	long	dw	10D				;字符串长度
+  
+DATAS ENDS
+     
+STACKS SEGMENT
+  
+STACKS ENDS
+
+CODES SEGMENT
+    ASSUME CS:CODES,DS:DATAS,SS:STACKS
+START:
+	MOV AX,DATAS
+	MOV DS,AX
+	
+	
+	call DISPLAY ;显示
+	
+	mov ah,0 ;中断
+	int 16H
+	
+	CLRB address,long;宏*取代
+	
+	MOV AH,4CH
+	INT 21H
+   
+   
+DISPLAY:  
+	mov ax,address     ;算出屏幕第12行中间的显存的段起始位置放入ax中
+	mov es,ax               ;此时es为屏幕第12行中间的显存的段起始位置
+	mov si,0                  ;si用来索引代码列的字符
+	mov di,0                  ;di用来定位目标列
+	
+	mov cx,long ;字符串长度
+	s1:
+	mov al,MESS[si]    ;源字符
+	mov es:[di],al    ;显示目标字符体
+	
+	mov al,71h        ;颜色:背景、字体
+	mov es:[di+1],al  ;设置目标字符颜色
+	
+	inc si                  ;db 一个字符一个字节
+	add di,2          ;显存 一个字符两个字节:偶字符体，奇字符颜色
+	loop s1
+	
+	ret
+      
+
+
+CODES ENDS
+    END START
+
